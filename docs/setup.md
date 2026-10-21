@@ -8,7 +8,9 @@ This document lists the exact tool versions our team uses and how to install the
 | --- | --- | --- | --- |
 | Verilator | 5.036 (2025-04-27) | WSL (Ubuntu) | Built from source at tag `v5.036`. Matches asicfab. |
 | GTKWave | 3.3.124 on asicfab | WSL (Ubuntu) | Waveform viewer only; a slightly different local version is fine. |
-| Python | TODO: fill in from `python3 --version` on asicfab | Windows | Runs all scripts, including UART to the FPGA. |
+| Python | 3.14 | Windows | Runs all scripts, including UART to the FPGA. |
+| Yosys (YoWASP) | 0.70 | Windows | `pip install yowasp-yosys`. Used by the TerosHDL schematic viewer and later for synthesis. |
+| TerosHDL | Latest | VS Code | Diagrams, testbench templates, documentation. Its linter stays off. |
 | Python packages | See `requirements.txt` | Windows | Install with `pip install -r requirements.txt`. |
 | Git | Latest Git for Windows | Windows | |
 | VS Code | Latest | Windows | Extensions listed below. |
@@ -102,13 +104,46 @@ The last command must print `Verilator 5.036`. The `make` step takes several min
 pip install -r requirements.txt
 ```
 
-### 7. Verify everything works
+### 7. Add Python to your PATH
+
+If `python` or `yowasp-yosys` gives a "not found" error, Windows doesn't know where Python lives. Find your Python's location:
+
+```powershell
+py -c "import sys; print(sys.executable)"
+```
+
+Then add its folder and its `Scripts` folder to your PATH, replacing the path with your own:
+
+```powershell
+$py = "C:\Users\<name>\AppData\Local\Python\pythoncore-3.14-64"
+[Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";$py;$py\Scripts", "User")
+```
+
+Close and reopen VS Code completely afterward.
+
+### 8. Install Yosys and TerosHDL's Python package
+
+```powershell
+python -m pip install yowasp-yosys teroshdl
+```
+
+### 9. Set up TerosHDL
+
+1. Install the **TerosHDL** extension in VS Code.
+2. Open TerosHDL's settings (the gear icon next to the project, or **Open Global Settings Menu**):
+   - **General:** set **Python3 binary path** to your full `python.exe` path.
+   - **Linter settings:** set every linter to disabled. Verilator linting comes from the Verilog-HDL/SystemVerilog extension instead.
+   - **Schematic viewer:** backend **YoWASP**. Leave the "extra options" box empty.
+3. Click **Verify Setup**. Expected result: everything passes except **GHDL** (a VHDL simulator we don't use) and **make** (not needed on Windows). `cocotb` (optional) may also show as missing.
+4. Load the team's TerosHDL project from the repo if one is saved there, or create a project and add the files in `rtl/` and `tb/` as **Source**.
+
+### 10. Verify everything works
 
 In VS Code's terminal, from the repo folder:
 
 ```powershell
 wsl verilator --version                 # should print 5.036
-python --version                        # should match the table
+python --version                        # should print 3.14
 python -m serial.tools.list_ports       # lists the FPGA's COM port when plugged in
 ```
 
@@ -138,6 +173,8 @@ wsl gtkwave tb_pe.vcd
 | `git` is not recognized | Git is not installed, or PowerShell was opened before installing. Install Git, then open a new terminal. |
 | `GNU Make cannot build in directories containing spaces` | Move the repo to a path with no spaces. |
 | Ubuntu fails to start with a virtualization error (often `0x80370102`) | Enable virtualization in your computer's BIOS settings. |
+| `python` or `yowasp-yosys` not found | Add Python and its Scripts folder to your PATH (step 7), then restart VS Code. |
+| TerosHDL Verify Setup shows Python path as empty | Re-enter the path in TerosHDL's General settings, and in the global settings menu if needed. |
 | GitHub rejects your password when pushing | Sign in through the browser prompt, or use a personal access token. |
 | `Cannot find file containing module` | Check the file path, and that you are running the command from the repo's top folder. |
 
