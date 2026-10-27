@@ -13,3 +13,6 @@ venv/
 # OS and editor files
 .DS_Store
 .vscode/
+
+teroshdl-project.yml
+obj_dir/
