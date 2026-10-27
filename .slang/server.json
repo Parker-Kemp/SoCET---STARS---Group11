@@ -1,0 +1,20 @@
+{
+    "index": [
+        {
+            "dirs": [
+                "rtl",
+                "tb",
+                "fpga"
+            ],
+            "excludeDirs": [
+                ".git",
+                "results",
+                "obj_dir"
+            ]
+        }
+    ],
+    "incdirs": [
+        "rtl",
+        "tb"
+    ]
+}
