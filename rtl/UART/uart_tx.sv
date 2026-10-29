@@ -36,7 +36,7 @@ module uart_tx #(
   logic [2:0]    bit_idx;    // which data bit is being sent (0-7)
   logic [7:0]    shift_reg;  // byte being sent; shifts right each bit
 
-  // Ready only while idle. The handshake happens in the IDLE state below.
+  // Ready only while idle. The find start bit happens in the IDLE state below.
   assign tx_ready = (state == IDLE);
 
   always_ff @(posedge clk or negedge rst_n) begin
@@ -52,7 +52,7 @@ module uart_tx #(
           tx      <= 1'b1;
           clk_cnt <= '0;
           bit_idx <= '0;
-          if (tx_valid) begin       // tx_ready is 1 in IDLE: handshake
+          if (tx_valid) begin       // tx_ready is 1 in IDLE, start bit detected
             shift_reg <= data_in;   // capture the byte
             tx        <= 1'b0;      // start bit
             state     <= START;
