@@ -7,8 +7,8 @@
 // sample lands in the middle of a bit, where the signal is most stable.
 
 module uart_rx #(
-  parameter int CLK_FREQ = 100_000_000,  //  clock frequency in Hz
-  parameter int BAUD     = 115_200       // baud rate; must match the PC side
+  parameter int CLK_FREQ = 100000000,  //  clock frequency in Hz (100m)
+  parameter int BAUD     = 115200       // baud rate; must match the PC side (115,200)
 ) (
   input  logic       clk,          //self explanatory
   input  logic       rst_n,        // active-low reset
