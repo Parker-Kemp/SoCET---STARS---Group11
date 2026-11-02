@@ -3,7 +3,7 @@ module compute_feeder #(
     parameter MAX_TILES = 3 // This is passed in by the tiling controller. The tiling controller will share the calculation with feeder
 ) (
     input logic CLK, nRST, start, 
-    input logic [MAX_TILES - 1: 0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
+    input logic [7: 0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
     output logic [$clog2(MAX_TILES * MAX_TILES * AS ):0 ] addr_A, addr_B, // addresses to read from matrices A and B
     output logic entry_flag
 );
