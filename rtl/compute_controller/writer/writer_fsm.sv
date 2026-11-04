@@ -5,7 +5,7 @@ module writer_fsm (
     output logic clear, enable, wdone
 );
     localparam ROW = 0; // counts rows/columns in a tile
-    localparam J = 2; // counts columns for output tiles
+    localparam J = 1; // counts columns for output tiles
 
     // controller code
     typedef enum logic [1:0] {

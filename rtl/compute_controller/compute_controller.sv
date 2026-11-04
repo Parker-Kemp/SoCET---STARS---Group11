@@ -12,7 +12,7 @@ module compute_controller #(
     // FEEDER MODULE
     compute_feeder #(
         .AS(AS)
-     ) compute_feeder (
+    ) feeder (
         .CLK       (CLK),
         .nRST      (nRST),
         .start     (start),
@@ -27,7 +27,7 @@ module compute_controller #(
     // WRITER MODULE
     compute_writer #(
         .AS(AS)
-     ) compute_writer (
+    ) writer (
         .CLK      (CLK),
         .nRST     (nRST),
         .exit_flag(exit_flag),

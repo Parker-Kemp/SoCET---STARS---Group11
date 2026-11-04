@@ -16,7 +16,7 @@ module compute_addr #(
         if (!nRST || clear) begin
             base <= 0;
         end else if (grow_en) begin
-            base += 16'(tiles);
+            base <= base + 16'(tiles);
         end
     end
 
