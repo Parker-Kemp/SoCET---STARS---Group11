@@ -1370,7 +1370,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="iNGQ8Yb3dWmD9Zx3Thxa" name="writer_fsm">
-    <mxGraphModel dx="713" dy="531" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="952" dy="483" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1412,7 +1412,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="mdQQFqDFX2hFyhKd1DWS-2" connectable="0" parent="mdQQFqDFX2hFyhKd1DWS-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&amp;amp;rollover_flag[J:ROW]" vertex="1">
+        <mxCell id="mdQQFqDFX2hFyhKd1DWS-2" connectable="0" parent="mdQQFqDFX2hFyhKd1DWS-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&amp;amp;rollover_flag[ROW]" vertex="1">
           <mxGeometry relative="1" x="0.0421" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
@@ -1481,8 +1481,8 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="vaqr2jtRGkR5Xjw7P1E8-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="NOTE: the &amp;amp;rollover_flag check has precedence over &amp;amp;rollover_flag[J:ROW]&amp;nbsp;check such that:&lt;br&gt;&lt;br&gt;&lt;div&gt;if (&amp;amp;rollover_flag) begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = DONE;&lt;/div&gt;&lt;div&gt;end else if (&amp;amp;rollover_flag[J:ROW]) begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = WAIT;&lt;/div&gt;&lt;div&gt;end else begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = ROW_COPY;&lt;/div&gt;&lt;div&gt;end&lt;/div&gt;" vertex="1">
-          <mxGeometry height="190" width="300" x="495" y="270" as="geometry" />
+        <mxCell id="vaqr2jtRGkR5Xjw7P1E8-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="NOTE: the &amp;amp;rollover_flag check has precedence over &amp;amp;rollover_flag[ROW]&amp;nbsp;check such that:&lt;br&gt;&lt;br&gt;&lt;div&gt;if (&amp;amp;rollover_flag) begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = DONE;&lt;/div&gt;&lt;div&gt;end else if (&amp;amp;rollover_flag[ROW]) begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = WAIT;&lt;/div&gt;&lt;div&gt;end else begin&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;next_state = ROW_COPY;&lt;/div&gt;&lt;div&gt;end&lt;br&gt;&lt;br&gt;ROW checks to move to the next TILE, while full rollover means we are done.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="190" width="300" x="495" y="280" as="geometry" />
         </mxCell>
         <mxCell id="rbLfhxpTHyBTejZjt9bg-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Writer FSM Diagram" vertex="1">
           <mxGeometry height="30" width="190" x="330" y="30" as="geometry" />

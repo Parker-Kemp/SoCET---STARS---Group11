@@ -22,6 +22,32 @@ module tb_compute_controller;
 
     int num_test_computes = 0;
 
+    string run_dir;
+
+    task automatic make_run_dir();
+        string date;
+        int folder_dir, run;
+
+        // Get today's date from the OS. Write it to a temp file, read it back, delete the file.
+        void'($system("date +%Y-%m-%d > .sim_date.txt"));
+        folder_dir = $fopen(".sim_date.txt", "r");
+        void'($fscanf(folder_dir, "%s", date));
+        $fclose(folder_dir);
+        void'($system("rm -f .sim_date.txt"));
+
+        // Find the first run number that doesn't have a folder yet today.
+        // "test -d" checks whether a folder exists, and returns 0 if it does.
+        run = 1;
+        run_dir = $sformatf("results/csv_records/compute_controller/%s_run%0d", date, run);
+        while ($system({"test -d ", run_dir}) == 0) begin
+            run++;
+            run_dir = $sformatf("results/csv_records/compute_controller/%s_run%0d", date, run);
+        end
+
+        void'($system({"mkdir -p ", run_dir}));
+        $display("Saving CSVs to %s", run_dir);
+    endtask
+
     // Clock generation
     always #(10) CLK++;
 
@@ -68,6 +94,7 @@ module tb_compute_controller;
         int cycles;
         int file_handle;
         int passed_cycles;
+        int cycle_limit;
 
         cycles = 0;
         passed_cycles = 0;
@@ -81,8 +108,8 @@ module tb_compute_controller;
         start = 0;
 
         // writing cvs sheet
-        file_handle = $fopen($sformatf("output_results_%0d.csv", num_test_computes), "a");
-
+        file_handle = $fopen($sformatf("%s/test_%0d.csv", run_dir, num_test_computes), "w");
+        
         // This is just an error check to make sure it successfully created it
         if (file_handle == 0) begin
             $display("FATAL ERROR: Simulator failed to create the file!");
@@ -93,11 +120,12 @@ module tb_compute_controller;
 
         while (!wdone) begin
             // timeout check
-            // if (cycles >= int'(tiles_m * tiles_n * tiles_q * AS + 100)) begin
-            //     $error("Timeout: output signals not set properly for a compute operation, exceeded %0d cycles",
-            //     tiles_m * tiles_n * tiles_q * AS + 100);
-            //     return;
-            // end
+            cycle_limit = int'(2 * tiles_m * tiles_n * tiles_q * AS + 100);
+            if (cycles >= cycle_limit) begin
+                $error("Timeout: output signals not set properly for a compute operation, exceeded %0d cycles",
+                cycle_limit);
+                return;
+            end
 
             if (entry_flag) begin
                 fork
@@ -147,15 +175,16 @@ module tb_compute_controller;
 
         nRST = 1'b1;
 
-        reset_signals();
-        reset();
+        make_run_dir();
 
         // TESTING EDGE CASES.
         for (int i = 0; i < 8; i++) begin
+            reset_signals();
+            reset();
             drive_compute(
-              i[2] ? 255 : 1,
-              i[1] ? 255 : 1,
-              i[0] ? 255 : 1
+              i[2] ? 16 : 1,
+              i[1] ? 16 : 1,
+              i[0] ? 16 : 1
             );
         end
 

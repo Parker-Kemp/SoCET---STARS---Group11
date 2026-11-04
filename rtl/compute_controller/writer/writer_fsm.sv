@@ -23,7 +23,7 @@ module writer_fsm (
             ROW_COPY: begin
                 if (&rollover_flag) begin
                     next_state = DONE;
-                end else if (&rollover_flag[J:ROW]) begin
+                end else if (&rollover_flag[ROW]) begin
                     next_state = WAIT;
                 end else begin
                     next_state = ROW_COPY;

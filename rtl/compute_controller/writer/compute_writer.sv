@@ -63,7 +63,7 @@ module compute_writer #(
         .CLK             (CLK),
         .nRST            (nRST),
         .clear           (fsm_clear),
-        .inner_tile_count(count[I]),
+        .inner_tile_count(count[J]),
         .in_tile_count   (count[ROW]),
         .tiles           (tiles_q),
         .grow_en         (&rollover_flag[J:ROW]),

@@ -12,7 +12,7 @@ module compute_addr #(
 
     logic [15: 0] base = '0;
 
-    always_ff @(posedge CLK, negedge nRST, posedge clear) begin
+    always_ff @(posedge CLK, negedge nRST) begin
         if (!nRST || clear) begin
             base <= 0;
         end else if (grow_en) begin
