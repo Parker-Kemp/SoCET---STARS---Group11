@@ -1,9 +1,13 @@
-module compute_writer #(
-    parameter AS  = 8 // ARRAY_SIZE
+module writer_controller #(
+    parameter int AS = 8, // array side length
+    parameter int MT = 32, // max tiles per matrix side (32 * 8 = 256)
+    parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
+    parameter int ADDR_WIDTH = $clog2(DEPTH)
 ) (
     input logic CLK, nRST, exit_flag,
-    input logic [7:0] tiles_m, tiles_q,
-    output logic [15 + $clog2(AS):0] addr_C,
+    input logic [5:0] tiles_m, tiles_q,
+    input logic mem_ready, // ENABLE from MEMORY
+    output logic [ADDR_WIDTH:0] addr_c,
     output logic wdone
 );
 
@@ -26,6 +30,7 @@ module compute_writer #(
         .CLK          (CLK),
         .nRST         (nRST),
         .exit_flag    (exit_flag),
+        .mem_ready    (mem_ready),
         .rollover_flag(rollover_flag),
         .clear        (fsm_clear),
         .enable       (fsm_enable),
@@ -58,8 +63,8 @@ module compute_writer #(
 
     // COMPUTE ADDRESS FOR C
     compute_addr #(
-        .AS(AS)
-     ) compute_addr_C (
+        .AS(AS), .MT(MT)
+     ) compute_addr_c (
         .CLK             (CLK),
         .nRST            (nRST),
         .clear           (fsm_clear),
@@ -67,7 +72,7 @@ module compute_writer #(
         .in_tile_count   (count[ROW]),
         .tiles           (tiles_q),
         .grow_en         (&rollover_flag[J:ROW]),
-        .addr            (addr_C)
+        .addr            (addr_c)
     );
 
 endmodule

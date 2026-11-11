@@ -1,9 +1,13 @@
-module compute_feeder #(
-    parameter AS  = 8 // ARRAY_SIZE, cells per side = tile width. TODO: make power of two for things to work smoothly
+module feeder_controller #(
+    parameter int AS = 8, // array side length
+    parameter int MT = 32, // max tiles per matrix side (32 * 8 = 256)
+    parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
+    parameter int ADDR_WIDTH = $clog2(DEPTH) // 13 bits for MT = 32, AS = 8
 ) (
     input logic CLK, nRST, start, 
-    input logic [7: 0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
-    output logic [15 + $clog2(AS): 0] addr_A, addr_B, // addresses to read from matrices A and B
+    input logic [5:0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
+    input logic mem_ready, // ENABLE from MEMORY
+    output logic [ADDR_WIDTH: 0] addr_a, addr_b, // addresses to read from matrices A and B
     output logic entry_flag
 );
     localparam T = 0; // counts rows/columns in a tile
@@ -27,6 +31,7 @@ module compute_feeder #(
         .CLK          (CLK),
         .nRST         (nRST),
         .start        (start),
+        .mem_ready    (mem_ready),
         .rollover_flag(rollover_flag),
         .clear        (fsm_clear),
         .enable       (fsm_enable)
@@ -62,8 +67,8 @@ module compute_feeder #(
 
     // COMPUTE ADDRESS FOR A
     compute_addr #(
-        .AS(AS)
-     ) compute_addr_A (
+        .AS(AS), .MT(MT)
+     ) compute_addr_a (
         .CLK             (CLK),
         .nRST            (nRST),
         .clear           (&rollover_flag || fsm_clear),
@@ -71,13 +76,13 @@ module compute_feeder #(
         .in_tile_count   (count[T]),
         .tiles           (tiles_n),
         .grow_en         (&rollover_flag[J:T]),
-        .addr            (addr_A)
+        .addr            (addr_a)
     );
 
     // COMPUTE ADDRESS FOR B
     compute_addr #(
-        .AS(AS)
-     ) compute_addr_B (
+        .AS(AS), .MT(MT)
+    ) compute_addr_b (
         .CLK             (CLK),
         .nRST            (nRST),
         .clear           (&rollover_flag[J:T] || fsm_clear),
@@ -85,7 +90,7 @@ module compute_feeder #(
         .in_tile_count   (count[T]),
         .tiles           (tiles_n),
         .grow_en         (&rollover_flag[K:T]),
-        .addr            (addr_B)
+        .addr            (addr_b)
     );
 
     // EXIT FLAG LOGIC

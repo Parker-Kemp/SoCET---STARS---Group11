@@ -1,26 +1,35 @@
-module feeder_fsm (
+module writer_fsm (
     input logic CLK, nRST,
-    input logic start, input logic [3:0]rollover_flag,
-    output logic clear, enable
+    input logic exit_flag, 
+    input logic mem_ready,
+    input logic [2:0]rollover_flag,
+    output logic clear, enable, wdone
 );
-    localparam T = 0; // counts rows/columns in a tile
-    localparam K = 1; // counts tile multiplications for a given output tile
+    localparam ROW = 0; // counts rows/columns in a tile
 
     // controller code
     typedef enum logic [1:0] {
         IDLE,
-        FEED,
-        FLUSH,
+        WAIT,
+        ROW_COPY,
         DONE
     } state_t;
     state_t state, next_state;
 
     always_comb begin : next_state_logic
         case (state)
-            IDLE: next_state = start ? FEED : IDLE;
-            FEED: next_state = (&rollover_flag) ? FLUSH : FEED;
-            FLUSH: next_state = &rollover_flag[K:T] ? DONE : FLUSH;
-            DONE: next_state = IDLE; // DONE once done FEEDING (not when controller is done)
+            IDLE: next_state = exit_flag ? WAIT : IDLE;
+            WAIT: next_state = exit_flag ? ROW_COPY : WAIT;
+            ROW_COPY: begin
+                if (&rollover_flag) begin
+                    next_state = DONE;
+                end else if (&rollover_flag[ROW]) begin
+                    next_state = WAIT;
+                end else begin
+                    next_state = ROW_COPY;
+                end
+            end
+            DONE: next_state = IDLE;
             default: next_state = IDLE;
         endcase
     end
@@ -33,28 +42,32 @@ module feeder_fsm (
         end
     end  
 
-    // NOTE: clear = !en, but they are used for separate things so this is clearer for what each does
     always_comb begin : output_logic 
         case (state) 
             IDLE: begin
                 clear = 1;
                 enable = 0;
+                wdone = 0;
             end
-            FEED: begin
+            WAIT: begin
                 clear = 0;
-                enable = 1;
+                enable = 0;
+                wdone = 0;
             end
-            FLUSH: begin
+            ROW_COPY: begin
                 clear = 0;
-                enable = 1;
+                enable = mem_ready;
+                wdone = 0;
             end
             DONE: begin
                 clear = 1;
                 enable = 0;
+                wdone = 1;
             end
             default: begin
                 clear = 1;
                 enable = 0;
+                wdone = 0;
             end
         endcase
     end
