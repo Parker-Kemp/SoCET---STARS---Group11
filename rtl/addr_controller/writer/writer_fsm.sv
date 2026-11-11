@@ -1,7 +1,6 @@
 module writer_fsm (
     input logic CLK, nRST,
-    input logic exit_flag, 
-    input logic mem_ready,
+    input logic exit_flag,
     input logic [2:0]rollover_flag,
     output logic clear, enable, wdone
 );
@@ -56,7 +55,7 @@ module writer_fsm (
             end
             ROW_COPY: begin
                 clear = 0;
-                enable = mem_ready;
+                enable = 1;
                 wdone = 0;
             end
             DONE: begin

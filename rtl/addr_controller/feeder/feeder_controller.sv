@@ -4,11 +4,10 @@ module feeder_controller #(
     parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
     parameter int ADDR_WIDTH = $clog2(DEPTH) // 13 bits for MT = 32, AS = 8
 ) (
-    input logic CLK, nRST, start, 
+    input logic CLK, nRST, start,
     input logic [5:0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
-    input logic mem_ready, // ENABLE from MEMORY
-    output logic [ADDR_WIDTH: 0] addr_a, addr_b, // addresses to read from matrices A and B
-    output logic entry_flag
+    output logic [ADDR_WIDTH - 1: 0] addr_a, addr_b, // addresses to read from matrices A and B
+    output logic entry_flag, addr_in_valid
 );
     localparam T = 0; // counts rows/columns in a tile
     localparam K = 1; // counts tile multiplications for a given output tile
@@ -31,7 +30,6 @@ module feeder_controller #(
         .CLK          (CLK),
         .nRST         (nRST),
         .start        (start),
-        .mem_ready    (mem_ready),
         .rollover_flag(rollover_flag),
         .clear        (fsm_clear),
         .enable       (fsm_enable)
@@ -53,6 +51,7 @@ module feeder_controller #(
     // COUNTER CONTROL BLOCK
     always_comb begin : counter_control_logic
         clear = fsm_clear;
+        addr_in_valid = fsm_enable; // valid addr when the fsm is enabled to calculate addresses
         enable[T] = fsm_enable;
         enable[K] = rollover_flag[T];
         enable[J] = &rollover_flag[K:T];

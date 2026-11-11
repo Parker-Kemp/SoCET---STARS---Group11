@@ -1,7 +1,7 @@
 module feeder_fsm (
     input logic CLK, nRST,
-    input logic start, input logic [3:0]rollover_flag,
-    input logic mem_ready,
+    input logic start, 
+    input logic [3:0] rollover_flag,
     output logic clear, enable
 );
 
@@ -44,11 +44,11 @@ module feeder_fsm (
             end
             FEED: begin
                 clear = 0;
-                enable = mem_ready; // 1 if mem finished the previous output
+                enable = 1;
             end
             FLUSH: begin
                 clear = 0;
-                enable = mem_ready;
+                enable = 1;
             end
             DONE: begin
                 clear = 1;

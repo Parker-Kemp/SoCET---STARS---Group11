@@ -6,9 +6,8 @@ module writer_controller #(
 ) (
     input logic CLK, nRST, exit_flag,
     input logic [5:0] tiles_m, tiles_q,
-    input logic mem_ready, // ENABLE from MEMORY
-    output logic [ADDR_WIDTH:0] addr_c,
-    output logic wdone
+    output logic [ADDR_WIDTH - 1:0] addr_c,
+    output logic wdone, writer_wren
 );
 
     localparam ROW = 0; // counts current row copying
@@ -30,7 +29,6 @@ module writer_controller #(
         .CLK          (CLK),
         .nRST         (nRST),
         .exit_flag    (exit_flag),
-        .mem_ready    (mem_ready),
         .rollover_flag(rollover_flag),
         .clear        (fsm_clear),
         .enable       (fsm_enable),
@@ -52,6 +50,7 @@ module writer_controller #(
     
     // COUNTER CONTROL
     always_comb begin : counter_control_logic
+        writer_wren = fsm_enable;
         clear = fsm_clear;
         enable[ROW] = fsm_enable; // copies a new row every cycle.
         enable[J] = &rollover_flag[ROW];
