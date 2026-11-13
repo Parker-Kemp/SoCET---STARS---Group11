@@ -3,10 +3,11 @@ module addr_controller #(
     parameter int AS = 8, // array side length
     parameter int MT = 32, // max tiles per matrix side (32 * 8 = 256)
     parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
-    parameter int ADDR_WIDTH = $clog2(DEPTH) // 13 bits for MT = 32, AS = 8
+    parameter int ADDR_WIDTH = $clog2(DEPTH), // 13 bits for MT = 32, AS = 8
+    parameter int TILE_W = $clog2(MT+1) // 6 when MT = 32
 ) (
     input CLK, nRST,
-    input logic [5:0] tiles_m, tiles_n, tiles_q,
+    input logic [TILE_W-1:0] tiles_m, tiles_n, tiles_q,
     input logic exit_flag, start, 
     output logic [ADDR_WIDTH - 1: 0] addr_a, addr_b, addr_c,
     output logic entry_flag, wdone, writer_wren, addr_in_valid
@@ -17,7 +18,8 @@ module addr_controller #(
         .AS        (AS),
         .MT        (MT),
         .DEPTH     (DEPTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .TILE_W    (TILE_W)
      ) feeder_controller (
         .CLK          (CLK),
         .nRST         (nRST),
@@ -36,7 +38,8 @@ module addr_controller #(
         .AS        (AS),
         .MT        (MT),
         .DEPTH     (DEPTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .TILE_W    (TILE_W)
      ) writer_controller (
         .CLK        (CLK),
         .nRST       (nRST),

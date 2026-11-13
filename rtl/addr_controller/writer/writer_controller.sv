@@ -2,11 +2,12 @@ module writer_controller #(
     parameter int AS = 8, // array side length
     parameter int MT = 32, // max tiles per matrix side (32 * 8 = 256)
     parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
-    parameter int ADDR_WIDTH = $clog2(DEPTH)
+    parameter int ADDR_WIDTH = $clog2(DEPTH),
+    parameter int TILE_W = $clog2(MT+1) // 6 when MT = 32
 ) (
     input logic CLK, nRST, exit_flag,
-    input logic [5:0] tiles_m, tiles_q,
-    output logic [ADDR_WIDTH - 1:0] addr_c,
+    input logic [TILE_W-1:0] tiles_m, tiles_q,
+    output logic [ADDR_WIDTH-1:0] addr_c,
     output logic wdone, writer_wren
 );
 

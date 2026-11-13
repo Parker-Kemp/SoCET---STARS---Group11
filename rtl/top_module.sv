@@ -10,6 +10,7 @@ module top_module #(
     localparam int WORD_WIDTH_C = 32 * AS;
     localparam int DEPTH = MT * MT * AS; // words per block (same for A, B and C)
     localparam int ADDR_WIDTH = $clog2(DEPTH); // 13 bits for MT = 32, AS = 8
+    localparam int TILE_W = $clog2(MT+1); // 6 when MT = 32
 
     logic start; // synced start
 
@@ -36,15 +37,15 @@ module top_module #(
     logic controller_access_mem;
 
     // tile signals
-    logic [5:0] tiles_m;
-    logic [5:0] tiles_n;
-    logic [5:0] tiles_q;
+    logic [TILE_W-1:0] tiles_m;
+    logic [TILE_W-1:0] tiles_n;
+    logic [TILE_W-1:0] tiles_q;
 
     // TODO: UART SIGNALS (PARKER) - Hook up to UART module
     // tile signals out of UART
-    logic [5:0] tiles_m_uart; // 6 bits because MT = 32 and we need to hold 32 itself
-    logic [5:0] tiles_n_uart;
-    logic [5:0] tiles_q_uart;
+    logic [TILE_W-1:0] tiles_m_uart; // 6 bits because MT = 32 and we need to hold 32 itself
+    logic [TILE_W-1:0] tiles_n_uart;
+    logic [TILE_W-1:0] tiles_q_uart;
     logic [ADDR_WIDTH-1:0] uart_addr_a;
     logic [ADDR_WIDTH-1:0] uart_addr_b;
     logic [ADDR_WIDTH-1:0] uart_addr_c;
@@ -191,7 +192,8 @@ module top_module #(
         .AS        (AS),
         .MT        (MT),
         .DEPTH     (DEPTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .TILE_W    (TILE_W)
      ) addr_controller (
         .CLK          (CLK),
         .nRST         (nRST),

@@ -2,11 +2,12 @@ module feeder_controller #(
     parameter int AS = 8, // array side length
     parameter int MT = 32, // max tiles per matrix side (32 * 8 = 256)
     parameter int DEPTH = MT * MT * AS, // words per block (same for A, B and C)
-    parameter int ADDR_WIDTH = $clog2(DEPTH) // 13 bits for MT = 32, AS = 8
+    parameter int ADDR_WIDTH = $clog2(DEPTH), // 13 bits for MT = 32, AS = 8
+    parameter int TILE_W = $clog2(MT+1) // 6 when MT = 32
 ) (
     input logic CLK, nRST, start,
-    input logic [5:0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
-    output logic [ADDR_WIDTH - 1: 0] addr_a, addr_b, // addresses to read from matrices A and B
+    input logic [TILE_W-1:0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
+    output logic [ADDR_WIDTH-1: 0] addr_a, addr_b, // addresses to read from matrices A and B
     output logic entry_flag, addr_in_valid
 );
     localparam T = 0; // counts rows/columns in a tile
@@ -58,8 +59,7 @@ module feeder_controller #(
         enable[I] = &rollover_flag[J:T];
 
         rollover_val[T] = AS - 1;
-        rollover_val[K] = ((tiles_n) > 2 ? tiles_n : 2) - 1; // TODO: TEST IF THIS IS NECESSARY
-        // rollover_val[K] = tiles_n - 1; // TODO: SEE IF THIS WORKS
+        rollover_val[K] = ((tiles_n) > 2 ? tiles_n : 2) - 1;
         rollover_val[J] = tiles_q - 1;
         rollover_val[I] = tiles_m - 1;
     end
