@@ -1,0 +1,3 @@
+verilator --binary --timing --trace -Wall -Wno-fatal --top-module tb_compute_controller -f scripts/compute_controller/compute_files.f
+
+./obj_dir/Vtb_compute_controller

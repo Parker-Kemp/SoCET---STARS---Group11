@@ -10,6 +10,8 @@ __pycache__/
 .venv/
 venv/
 
+results/csv_records/
+
 # OS and editor files
 .DS_Store
 .vscode/
