@@ -3,12 +3,13 @@ module array_grid #(
     parameter DATA_W = 8,
     parameter ACC_W = 32
 ) (
-    input logic clk,
+    input logic CLK,
     input logic nRST,
     input logic flag_in [AS], 
     input logic signed [DATA_W-1:0] a_row_in [AS], 
     input logic signed [DATA_W-1:0] b_col_in [AS],
-    output logic signed [ACC_W-1:0] c_out [AS][AS]
+    output logic signed [ACC_W-1:0] c_out [AS][AS],
+    output logic exit_flag
 );
 
     logic signed [DATA_W-1:0] a_wire [AS][AS]; // wire passing valules to the right
@@ -21,7 +22,7 @@ module array_grid #(
         for (r = 0; r < AS; r++) begin : row
             for (c = 0; c < AS; c++) begin : col
                 pe_cell pe_cell (
-                    .CLK         (clk),
+                    .CLK         (CLK),
                     .nRST        (nRST),
                     // If first col (c==0), take external input; else take left neighbor's output
                     .flag_in     (c == 0 ? flag_in[r]  : flag_wire[r][c-1]),
@@ -38,5 +39,6 @@ module array_grid #(
             end
         end
     endgenerate
-    // stagger will be added on a wrapper module of this
+
+    assign exit_flag = flag_wire[AS-1][AS-1];
 endmodule 
