@@ -1,92 +1,134 @@
 """
 uart_driver.py
 
-Protocol (must match the control FSM on the FPGA):
-  PC to FPGA: 32 bytes
-      16 bytes of matrix A, then 16 bytes of matrix B.
-      Each matrix is sent row by row and left to right with LSB first
-      Each value is a signed 8-bit integer (-128 to 127)
-  FPGA to PC: 64 bytes
-      16 results, row by row, each a signed 32-bit integer
-      sent LSB first
+Sends two matrices to the FPGA, read result back, compares it with Numpy baseline.
 
-To find the board's port, run in a terminal:
-    python -m serial.tools.list_ports
+PC to FPGA:  tiles_m, tiles_n, tiles_q (1 byte each), then A words, then B words
+FPGA to PC:  C words, each value a signed INT32 sent LSB
+
+Run from the repo's top folder (VS Code terminal):
+    python -m serial.tools.list_ports                      #find the board's COM port
+    python python/uart_driver.py --port COM5 --size 20 13 30
 """
 
+import argparse
+import time
 import numpy as np
-import serial  ##his is the UART library fyi, just pip install it
+import serial   
 
-TILE_SIZE = 4                                  # the array is 4x4
-NUM_ELEMENTS = TILE_SIZE * TILE_SIZE          # 16 values per tile
-BYTES_PER_RESULT = 4                           # results are 32-bit
-SEND_BYTES = 2 * NUM_ELEMENTS                 # A and B: 32 bytes
-RECEIVE_BYTES = NUM_ELEMENTS * BYTES_PER_RESULT  # 64 bytes
-
-INT8_MIN = -128
-INT8_MAX = 127
+AS = 8 #array side length, must match hardware Rx/Tx
+MAX = 256 #largest matrix side the FPGA memory holds
+MIN_TILES_N = 2 #workaround for the tiles_n = 1 hardware bug, set to 1 once fixed
 
 
-def pack_tiles(A, B):  ##fpga expects 32 bytes, so turn 2 4x4 INT8 matrices 
-    message = bytearray()
-
-    for matrix, name in [(A, "A"), (B, "B")]:
-        matrix = np.asarray(matrix)
-        if matrix.shape != (TILE_SIZE, TILE_SIZE):  ##CHECKS FOR SHAPE
-            raise ValueError(f"{name} must be 4x4, got shape {matrix.shape}")
-
-        for row in range(TILE_SIZE):
-            for col in range(TILE_SIZE):
-                value = int(matrix[row, col]) ##CHECKS FOR INT8 RANGE (SIGNED)
-                if value < INT8_MIN or value > INT8_MAX:
-                    raise ValueError(
-                        f"{name}[{row}][{col}] = {value} is outside the INT8 range "
-                        f"{INT8_MIN} to {INT8_MAX}"
-                    )
-                message += value.to_bytes(1, byteorder="little", signed=True)
-
-    return bytes(message)
+def ceil_div(a, b): #division op that rounds up
+    return (a + b - 1) // b
 
 
-def unpack_result(raw):  ##turns the fpga's 64 byte result back into a 4x4 matrix
-    if len(raw) != RECEIVE_BYTES:
-        raise IOError(
-            f"FPGA sent only {len(raw)} of {RECEIVE_BYTES} bytes before the timeout. "
-            "Check the board connection, port, and baud rate."
-        )
+def build_message(A, B): ##Pads A and B tiles to send
+    m, n = A.shape
+    q = B.shape[1]
+    tiles_m = ceil_div(m, AS)
+    tiles_n = max(ceil_div(n, AS), MIN_TILES_N)
+    tiles_q = ceil_div(q, AS)
 
-    result = np.zeros((TILE_SIZE, TILE_SIZE), dtype=np.int64)
-    for index in range(NUM_ELEMENTS):
-        start = index * BYTES_PER_RESULT
-        chunk = raw[start:start + BYTES_PER_RESULT]
-        value = int.from_bytes(chunk, byteorder="little", signed=True)
-        row = index // TILE_SIZE
-        col = index % TILE_SIZE
-        result[row, col] = value
+    #Creates all zero matrix and copies values into top-left
+    A_pad = np.zeros((tiles_m * AS, tiles_n * AS), dtype=np.int64)
+    A_pad[:m, :n] = A
+    B_pad = np.zeros((tiles_n * AS, tiles_q * AS), dtype=np.int64)
+    B_pad[:n, :q] = B
 
-    return result
+    message = bytearray([tiles_m, tiles_n, tiles_q])   #header
+
+    for fi in range(tiles_m):
+        for fk in range(tiles_n):
+            tile = A_pad[fi * AS:(fi + 1) * AS, fk * AS:(fk + 1) * AS]
+            for col in range(AS):
+                for value in tile[:, col]:
+                    message += int(value).to_bytes(1, "little", signed=True)
+
+    for fj in range(tiles_q):
+        for fk in range(tiles_n):
+            tile = B_pad[fk * AS:(fk + 1) * AS, fj * AS:(fj + 1) * AS]
+            for row in range(AS):
+                for value in tile[row, :]:
+                    message += int(value).to_bytes(1, "little", signed=True)
+
+    return bytes(message), (tiles_m, tiles_n, tiles_q)
 
 
-class FPGA:
+def unpack_c(raw, tiles, m, q): #crops received C matrix from FPGA to m x q
+    tiles_m, tiles_n, tiles_q = tiles
+    C_pad = np.zeros((tiles_m * AS, tiles_q * AS), dtype=np.int64)
+    pos = 0
+    for wi in range(tiles_m):
+        for wj in range(tiles_q):
+            for row in range(AS):
+                for col in range(AS):
+                    value = int.from_bytes(raw[pos:pos + 4], "little", signed=True)
+                    C_pad[wi * AS + row, wj * AS + col] = value
+                    pos += 4
+    return C_pad[:m, :q]
 
-    def __init__(self, port, baud=115200, timeout=2.0):
-        # baud must match the BAUD parameter in uart_rx.sv and uart_tx.sv.
-        # timeout: seconds to wait for a reply before giving up.
-        self.ser = serial.serial_for_url(port, baudrate=baud, timeout=timeout)
-        # Throw away any stale bytes left over from an earlier run.
-        self.ser.reset_input_buffer()
 
-    def send_tiles(self, A, B):
-        self.ser.write(pack_tiles(A, B))   ##Sends 1 of the 4x4 tiles (not both)
+def read_exactly(ser, count): #reads until count bytes are received
+    data = bytearray()
+    while len(data) < count:
+        chunk = ser.read(count - len(data))
+        if len(chunk) == 0:
+            raise IOError(f"FPGA stopped after {len(data)} of {count} bytes. "
+                          "Check the port, baud rate, and reset the board.")
+        data += chunk
+    return bytes(data)
 
-    def read_result(self):
-        raw = self.ser.read(RECEIVE_BYTES)  ##waits for fpga's 4x4 result tile and returns it 
-        return unpack_result(raw)
 
-    def matmul(self, A, B):   ##multiplies two 4x4 INT8 tile on the fpga
-        self.send_tiles(A, B)
-        return self.read_result()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", required=True, help="e.g. COM5")
+    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--size", type=int, nargs=3, default=[16, 16, 16],
+                        metavar=("M", "N", "Q"), help="A is MxN, B is NxQ")
+    args = parser.parse_args()
 
-    def close(self):
-        self.ser.close()
+    m, n, q = args.size
+    for size in (m, n, q):
+        if size < 1 or size > MAX:
+            parser.error(f"sizes must be between 1 and {MAX}")
 
+    #creates random INT8 matrices
+    rng = np.random.default_rng()
+    A = rng.integers(-128, 128, size=(m, n))
+    B = rng.integers(-128, 128, size=(n, q))
+
+    #Pc calculate timer
+    pc_start = time.perf_counter()
+    C_pc = A @ B
+    pc_time = time.perf_counter() - pc_start
+
+    #FPGA calculate timer
+    message, tiles = build_message(A, B)
+    c_bytes = tiles[0] * tiles[2] * AS * AS * 4
+
+    ser = serial.Serial(args.port, args.baud, timeout=2.0)
+    ser.reset_input_buffer()            #flushes leftover bytes
+
+    fpga_start = time.perf_counter()
+    ser.write(message)
+    raw = read_exactly(ser, c_bytes)
+    fpga_time = time.perf_counter() - fpga_start
+    ser.close()
+
+    C_fpga = unpack_c(raw, tiles, m, q)
+
+    #Print results
+    wrong = int(np.count_nonzero(C_fpga != C_pc))
+
+    print(f"A {m}x{n} @ B {n}x{q}   tiles {tiles}")
+    print(f"sent {len(message)} bytes, received {len(raw)} bytes")
+    print(f"wrong values: {wrong} of {C_pc.size}")
+    print(f"PC (NumPy) time:     {pc_time * 1000:.3f} ms")
+    print(f"FPGA round-trip time: {fpga_time * 1000:.1f} ms (includes UART transfer)")
+
+
+if __name__ == "__main__":
+    main()
