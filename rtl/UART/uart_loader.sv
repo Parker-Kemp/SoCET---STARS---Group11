@@ -85,7 +85,7 @@ module uart_loader #(
       next_addr     <= '0;
       last_a_addr   <= '0;
       last_b_addr   <= '0;
-    end else begin.
+    end else begin
       tiles_m_valid <= 1'b0;
       tiles_n_valid <= 1'b0;
       tiles_q_valid <= 1'b0;
