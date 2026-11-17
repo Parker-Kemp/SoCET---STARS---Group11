@@ -54,10 +54,7 @@ module feeder_fsm (
                 clear = 1;
                 enable = 0;
             end
-            default: begin
-                clear = 1;
-                enable = 0;
-            end
+            default: begin end
         endcase
     end
         

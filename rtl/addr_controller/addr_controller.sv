@@ -10,7 +10,8 @@ module addr_controller #(
     input logic [TILE_W-1:0] tiles_m, tiles_n, tiles_q,
     input logic exit_flag, start, 
     output logic [ADDR_WIDTH - 1: 0] addr_a, addr_b, addr_c,
-    output logic entry_flag, wdone, writer_wren, addr_in_valid
+    output logic entry_flag, wdone, writer_wren,
+    output logic [$clog2(AS)-1:0] row_cnt
 );
 
     // FEEDER MODULE
@@ -29,8 +30,7 @@ module addr_controller #(
         .tiles_q      (tiles_q),
         .addr_a       (addr_a),
         .addr_b       (addr_b),
-        .entry_flag   (entry_flag),
-        .addr_in_valid(addr_in_valid)
+        .entry_flag   (entry_flag)
     );
 
     // WRITER MODULE
@@ -48,7 +48,8 @@ module addr_controller #(
         .tiles_q    (tiles_q),
         .addr_c     (addr_c),
         .wdone      (wdone),
-        .writer_wren(writer_wren)
+        .writer_wren(writer_wren),
+        .row_cnt    (row_cnt)
     );
     
 endmodule

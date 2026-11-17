@@ -34,4 +34,4 @@ module pe_cell #(parameter DATA_W = 8, parameter ACC_W = 32)
         end
     end
 
-endmodule 
+endmodule

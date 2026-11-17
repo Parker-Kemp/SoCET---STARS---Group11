@@ -8,7 +8,7 @@ module feeder_controller #(
     input logic CLK, nRST, start,
     input logic [TILE_W-1:0] tiles_m, tiles_n, tiles_q, // tiles of m, n, and q in that order
     output logic [ADDR_WIDTH-1: 0] addr_a, addr_b, // addresses to read from matrices A and B
-    output logic entry_flag, addr_in_valid
+    output logic entry_flag
 );
     localparam T = 0; // counts rows/columns in a tile
     localparam K = 1; // counts tile multiplications for a given output tile
@@ -52,7 +52,6 @@ module feeder_controller #(
     // COUNTER CONTROL BLOCK
     always_comb begin : counter_control_logic
         clear = fsm_clear;
-        addr_in_valid = fsm_enable; // valid addr when the fsm is enabled to calculate addresses
         enable[T] = fsm_enable;
         enable[K] = rollover_flag[T];
         enable[J] = &rollover_flag[K:T];
