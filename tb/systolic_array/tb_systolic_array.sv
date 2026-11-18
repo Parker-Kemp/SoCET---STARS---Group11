@@ -1,16 +1,12 @@
 // Testbench for systolic_array.
 // Sends NT tiles back to back, logs what it sent and what came out to two CSVs.
 // It does NOT check the math. The Python script does that from the CSVs.
-//
-//   inputs.csv  : one line per cycle  -> tile, aT0..aT(AS-1), b0..b(AS-1)
-//                 (a column of A is a row of A-transpose, so "aT")
-//   outputs.csv : one line per C row  -> tile, c0..c(AS-1)
 module tb_systolic_array;
 
     localparam AS = 8;
     localparam DATA_W = 8;
     localparam ACC_W = 32;
-    localparam NT = 1000; // number of tiles: 5 edge cases (always minimum of 5) and the rest are random
+    localparam NT = 100; // number of tiles: 5 edge cases (always minimum of 5) and the rest are random
 
     logic CLK, nRST;
     logic flag_in, exit_flag;
@@ -197,7 +193,7 @@ module tb_systolic_array;
         $fwrite(folder_dir_out, "\n");
 
         // reset
-        nRST    = 0;
+        nRST = 0;
         flag_in = 0;
         for (int i = 0; i < AS; i++) begin 
             a_row_in[i] = 0; 

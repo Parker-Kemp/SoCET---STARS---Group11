@@ -76,7 +76,8 @@ module top_module
     logic [ADDR_WIDTH-1:0] ac_addr_b;
     logic [ADDR_WIDTH-1:0] ac_addr_c;
     logic ac_wren; // enables writing into mem block C
-    logic ac_entry_flag; // SHARED WITH SYSTOLIC ARRAY
+    logic ac_entry_flag;
+    logic ac_entry_flag_delayed; // SHARED WITH SYSTOLIC ARRAY
     logic ac_compute_done;
     logic [$clog2(AS)-1:0] ac_row_cnt;
 
@@ -91,7 +92,7 @@ module top_module
     multi_block_ram #(
         .AS           (AS),
         .MT           (MT)
-     ) multi_block_ram (
+    ) ram (
         .CLK       (CLK),
         .addr_a    (mem_addr_a),
         .data_in_a (mem_din_a),
@@ -171,7 +172,7 @@ module top_module
                 mem_addr_c = uc_addr_c;
 
                 mem_din_a = $unsigned(uc_data_a);
-                mem_din_b = $unsigned(uc_data_a);
+                mem_din_b = $unsigned(uc_data_b);
                 uc_data_c = $signed(mem_dout_c);
             end
             default: begin end
@@ -215,6 +216,16 @@ module top_module
         .row_cnt      (ac_row_cnt) // 3 BITS IS ENOUGH BECAUSE ROW SHOULD ONLY COUNT FROM 0 to AS - 1
     );
 
+    shift_reg #(
+        .WIDTH(1),
+        .DEPTH(1)
+     ) shift_reg (
+        .CLK     (CLK),
+        .nRST    (nRST),
+        .data_in (ac_entry_flag),
+        .data_out(ac_entry_flag_delayed)
+    );
+
     // SYSTOLIC ARRAY
     systolic_array #(
         .AS    (AS),
@@ -223,7 +234,7 @@ module top_module
      ) systolic_array (
         .CLK      (CLK),
         .nRST     (nRST),
-        .flag_in  (ac_entry_flag),
+        .flag_in  (ac_entry_flag_delayed),
         .a_row_in (sa_a_row_in),
         .b_col_in (sa_b_col_in),
         .c_out    (sa_c_out),
