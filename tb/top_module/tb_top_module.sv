@@ -204,10 +204,10 @@ module tb_top_module;
         int tiles_q;
 
         // REVIEW: Change these here for different tests with different tile sizes.
-        // so far tested: 2, MT, and all randoms (multiple runs). All passed.
-        tiles_m = $urandom_range(MT, 2);
-        tiles_n = $urandom_range(MT, 2);
-        tiles_q = $urandom_range(MT, 2);
+        // so far tested: 1, MT, and all randoms (multiple runs). All passed.
+        tiles_m = $urandom_range(MT, 1);
+        tiles_n = $urandom_range(MT, 1);
+        tiles_q = $urandom_range(MT, 1);
             
         force DUT.uc_done_load = '1;
         force DUT.uc_done_rb = '1;

@@ -11,7 +11,8 @@ module addr_controller #(
     input logic exit_flag, start, 
     output logic [ADDR_WIDTH - 1: 0] addr_a, addr_b, addr_c,
     output logic entry_flag, wdone, writer_wren,
-    output logic [$clog2(AS)-1:0] row_cnt
+    output logic [$clog2(AS)-1:0] row_cnt,
+    output logic [7:0] k_cnt
 );
 
     // FEEDER MODULE
@@ -22,15 +23,16 @@ module addr_controller #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .TILE_W    (TILE_W)
      ) feeder_controller (
-        .CLK          (CLK),
-        .nRST         (nRST),
-        .start        (start),
-        .tiles_m      (tiles_m),
-        .tiles_n      (tiles_n),
-        .tiles_q      (tiles_q),
-        .addr_a       (addr_a),
-        .addr_b       (addr_b),
-        .entry_flag   (entry_flag)
+        .CLK       (CLK),
+        .nRST      (nRST),
+        .start     (start),
+        .tiles_m   (tiles_m),
+        .tiles_n   (tiles_n),
+        .tiles_q   (tiles_q),
+        .addr_a    (addr_a),
+        .addr_b    (addr_b),
+        .entry_flag(entry_flag),
+        .k_cnt     (k_cnt)
     );
 
     // WRITER MODULE

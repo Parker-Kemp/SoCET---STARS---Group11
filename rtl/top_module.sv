@@ -77,9 +77,11 @@ module top_module
     logic [ADDR_WIDTH-1:0] ac_addr_c;
     logic ac_wren; // enables writing into mem block C
     logic ac_entry_flag;
-    logic ac_entry_flag_delayed; // SHARED WITH SYSTOLIC ARRAY
+    logic ac_entry_flag_d; // SHARED WITH SYSTOLIC ARRAY
     logic ac_compute_done;
     logic [$clog2(AS)-1:0] ac_row_cnt;
+    logic [7:0] ac_k_cnt;
+    logic [7:0] ac_k_cnt_d;
 
     // SYNCHRONIZER FOR START SIGNAL
     two_ff_synchronizer start_synchronizer (
@@ -156,10 +158,18 @@ module top_module
                 mem_wren_b = 0;
                 mem_wren_c = ac_wren;
 
-                for (int i = 0; i < AS; i++) begin
-                    sa_a_row_in[i] = $signed(mem_dout_a[i*DATA_W +: DATA_W]);
-                    sa_b_col_in[i] = $signed(mem_dout_b[i*DATA_W +: DATA_W]);
-                    mem_din_c[i*ACC_W +: ACC_W] = $unsigned(sa_c_out[ac_row_cnt][i]);
+                if (ac_k_cnt_d >= tiles_n) begin // ONLY IN THE EDGE CASE FOR tiles_n == 1
+                    for (int i = 0; i < AS; i++) begin
+                        sa_a_row_in[i] = '0;
+                        sa_b_col_in[i] = '0;
+                        mem_din_c[i*ACC_W +: ACC_W] = $unsigned(sa_c_out[ac_row_cnt][i]);
+                    end
+                end else begin
+                    for (int i = 0; i < AS; i++) begin
+                        sa_a_row_in[i] = $signed(mem_dout_a[i*DATA_W +: DATA_W]);
+                        sa_b_col_in[i] = $signed(mem_dout_b[i*DATA_W +: DATA_W]);
+                        mem_din_c[i*ACC_W +: ACC_W] = $unsigned(sa_c_out[ac_row_cnt][i]);
+                    end
                 end
             end
             MEM_UART: begin
@@ -200,30 +210,41 @@ module top_module
         .ADDR_WIDTH(ADDR_WIDTH),
         .TILE_W    (TILE_W)
      ) addr_controller (
-        .CLK          (CLK),
-        .nRST         (nRST),
-        .tiles_m      (tiles_m),
-        .tiles_n      (tiles_n),
-        .tiles_q      (tiles_q),
-        .exit_flag    (sa_exit_flag),
-        .start        (fsm_start_compute),
-        .addr_a       (ac_addr_a),
-        .addr_b       (ac_addr_b),
-        .addr_c       (ac_addr_c),
-        .entry_flag   (ac_entry_flag),
-        .wdone        (ac_compute_done),
-        .writer_wren  (ac_wren),
-        .row_cnt      (ac_row_cnt) // 3 BITS IS ENOUGH BECAUSE ROW SHOULD ONLY COUNT FROM 0 to AS - 1
+        .CLK        (CLK),
+        .nRST       (nRST),
+        .tiles_m    (tiles_m),
+        .tiles_n    (tiles_n),
+        .tiles_q    (tiles_q),
+        .exit_flag  (sa_exit_flag),
+        .start      (fsm_start_compute),
+        .addr_a     (ac_addr_a),
+        .addr_b     (ac_addr_b),
+        .addr_c     (ac_addr_c),
+        .entry_flag (ac_entry_flag),
+        .wdone      (ac_compute_done),
+        .writer_wren(ac_wren),
+        .row_cnt    (ac_row_cnt), // 3 BITS IS ENOUGH BECAUSE ROW SHOULD ONLY COUNT FROM 0 to AS - 1
+        .k_cnt      (ac_k_cnt)
     );
 
     shift_reg #(
         .WIDTH(1),
         .DEPTH(1)
-     ) shift_reg (
+    ) shift_entry_flag (
         .CLK     (CLK),
         .nRST    (nRST),
         .data_in (ac_entry_flag),
-        .data_out(ac_entry_flag_delayed)
+        .data_out(ac_entry_flag_d)
+    );
+
+    shift_reg #(
+        .WIDTH(1),
+        .DEPTH(1)
+    ) shift_k_cnt (
+        .CLK     (CLK),
+        .nRST    (nRST),
+        .data_in (ac_k_cnt),
+        .data_out(ac_k_cnt_d)
     );
 
     // SYSTOLIC ARRAY
@@ -234,7 +255,7 @@ module top_module
      ) systolic_array (
         .CLK      (CLK),
         .nRST     (nRST),
-        .flag_in  (ac_entry_flag_delayed),
+        .flag_in  (ac_entry_flag_d),
         .a_row_in (sa_a_row_in),
         .b_col_in (sa_b_col_in),
         .c_out    (sa_c_out),
