@@ -8,6 +8,7 @@ module writer_controller #(
     input logic CLK, nRST, exit_flag,
     input logic [TILE_W-1:0] tiles_m, tiles_q,
     output logic [ADDR_WIDTH-1:0] addr_c,
+    output logic [$clog2(AS)-1:0] row_cnt,
     output logic wdone, writer_wren
 );
 
@@ -74,5 +75,7 @@ module writer_controller #(
         .grow_en         (&rollover_flag[J:ROW]),
         .addr            (addr_c)
     );
+
+    assign row_cnt = $clog2(AS)'(count[ROW]);
 
 endmodule

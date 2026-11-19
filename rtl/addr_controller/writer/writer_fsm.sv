@@ -63,11 +63,7 @@ module writer_fsm (
                 enable = 0;
                 wdone = 1;
             end
-            default: begin
-                clear = 1;
-                enable = 0;
-                wdone = 0;
-            end
+            default: begin end
         endcase
     end
         

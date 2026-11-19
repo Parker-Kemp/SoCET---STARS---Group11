@@ -1,0 +1,7 @@
+verilator --binary --timing --trace -Wall -Wno-fatal --top-module tb_top_module -f scripts/top_module/top_module_files.f
+
+// VERILATOR SEED FOR RANDOM TILE TESTS
+./obj_dir/Vtb_top_module +verilator+seed+$RANDOM
+
+// OTHERWISE USE
+./obj_dir/Vtb_top_module

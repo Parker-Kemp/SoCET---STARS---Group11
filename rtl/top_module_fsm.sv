@@ -1,13 +1,14 @@
-module top_module_fsm (
+module top_module_fsm     
+    import mem_pkg::*;
+(
     input logic CLK, nRST,
     input logic start,
     input logic uart_done_load, uart_done_readback,
     input logic compute_done,
-    output logic uart_access_mem, 
-    output logic controller_access_mem, 
+    output mem_owner_t mem_owner,
     output logic start_compute,
     output logic start_uart_load, start_uart_readback,
-    output logic done
+    output logic done, clkc_enable, clkc_clear
 );
 
     // controller code
@@ -43,51 +44,57 @@ module top_module_fsm (
     always_comb begin : output_logic 
         case (state) 
             IDLE: begin
-                uart_access_mem = 0;
-                controller_access_mem = 0;
+                mem_owner = MEM_NONE;
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 1;
                 done = 0;
             end
             LOAD: begin
-                uart_access_mem = 1;
-                controller_access_mem = 0;
+                mem_owner = MEM_UART;
                 start_uart_load = 1;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 0;
             end
             COMPUTE: begin
-                uart_access_mem = 0;
-                controller_access_mem = 1;
+                mem_owner = MEM_COMPUTE;
                 start_uart_load = 0;
                 start_compute = 1;
                 start_uart_readback = 0;
+                clkc_enable = 1;
+                clkc_clear = 0;
                 done = 0;
             end
             READBACK: begin
-                uart_access_mem = 1;
-                controller_access_mem = 0;
+                mem_owner = MEM_UART;
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 1;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 0;
             end
             DONE: begin
-                uart_access_mem = 0;
-                controller_access_mem = 0;
+                mem_owner = MEM_NONE;
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 1;
             end
-            default: begin // same as idle
-                uart_access_mem = 0;
-                controller_access_mem = 0;
+            default: begin 
+                mem_owner = MEM_NONE;
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 1;
                 done = 0;
             end
         endcase
