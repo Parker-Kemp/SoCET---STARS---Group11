@@ -6,7 +6,6 @@ module tb_top_module;
     localparam ACC_W = 32;
     localparam NT = 10; // number of tests: 5 edge cases (always minimum of 5) and the rest are random
 
-    logic uart_stuff; // doesn't do anything
     logic CLK, nRST;
     logic start, done;
 
@@ -17,7 +16,7 @@ module tb_top_module;
         .AS(AS),
         .MT(MT)
      ) DUT (
-        .uart_stuff (uart_stuff),
+        .uart_stuff (0),
         .CLK        (CLK),
         .nRST       (nRST),
         .start_async(start),
@@ -77,8 +76,8 @@ module tb_top_module;
                         B[test_num][i][j] = (((i+j) % 2) == 1) ? -128 : 127;
                     end // sign mix
                     default: begin 
-                        B[test_num][i][j] = DATA_W'($urandom ());
-                        A[test_num][i][j] = DATA_W'($urandom());
+                        B[test_num][i][j] = $signed(DATA_W'($urandom ()));
+                        A[test_num][i][j] = $signed(DATA_W'($urandom()));
                     end // randoms
                 endcase
             end
@@ -205,10 +204,14 @@ module tb_top_module;
 
         // REVIEW: Change these here for different tests with different tile sizes.
         // so far tested: 1, MT, and all randoms (multiple runs). All passed.
-        tiles_m = $urandom_range(MT, 1);
-        tiles_n = $urandom_range(MT, 1);
-        tiles_q = $urandom_range(MT, 1);
-            
+        // tiles_m = $urandom_range(MT, 1);
+        // tiles_n = $urandom_range(MT, 1);
+        // tiles_q = $urandom_range(MT, 1);
+
+        tiles_m = 2;
+        tiles_n = 1;
+        tiles_q = 2;
+
         force DUT.uc_done_load = '1;
         force DUT.uc_done_rb = '1;
         force DUT.uc_wren_a = '0;
@@ -218,6 +221,10 @@ module tb_top_module;
         force DUT.tiles_q = tiles_q;
 
         make_run_dir();
+
+        $display("tiles_m: %0d", tiles_m);
+        $display("tiles_n: %0d", tiles_n);
+        $display("tiles_q: %0d", tiles_q);
 
         folder_dir_a = $fopen({run_dir, "/input_a.csv"},  "w");
         folder_dir_b = $fopen({run_dir, "/input_b.csv"},  "w");
@@ -255,14 +262,13 @@ module tb_top_module;
 
             drive_start();
 
-            // REVIEW: Add record_addr if need for debug
-
             while(!done) begin
                 @(posedge CLK);
             end
-            @(posedge CLK);
 
+            $display("Test %0d clks: %0d", t, DUT.clkc_count); // DISPLAYS HOW MANY CLK CYCLES FOR COMPUTE
             record_output(t, tiles_m, tiles_q);
+            @(posedge CLK); 
         end
 
         $fclose(folder_dir_a);

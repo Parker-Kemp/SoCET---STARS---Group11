@@ -46,6 +46,8 @@ module top_module
     logic fsm_uc_memen; // fsm enables uart to access memory (mem-enable: memen): 1 - uart access | 0 - compute acess
     logic fsm_start_uc_load; // TODO: each stage of uart gets both a start input and done output
     logic fsm_start_uc_rb; // TODO: THIS CONNECTS TO UART
+    logic fsm_clkc_enable;
+    logic fsm_clkc_clear;
     mem_owner_t fsm_mem_owner;
 
     // TODO: UART SIGNALS (uc) (PARKER) - fix up the signals here because its a mess
@@ -82,6 +84,10 @@ module top_module
     logic [$clog2(AS)-1:0] ac_row_cnt;
     logic [7:0] ac_k_cnt;
     logic [7:0] ac_k_cnt_d;
+
+    // CLK counter signals
+    logic [15:0] clkc_count;
+    logic clkc_rollover_flag; // NOT USED
 
     // SYNCHRONIZER FOR START SIGNAL
     two_ff_synchronizer start_synchronizer (
@@ -123,7 +129,9 @@ module top_module
         .start_compute      (fsm_start_compute),
         .start_uart_load    (fsm_start_uc_load),
         .start_uart_readback(fsm_start_uc_rb),
-        .done               (fsm_done)
+        .done               (fsm_done),
+        .clkc_enable        (fsm_clkc_enable),
+        .clkc_clear         (fsm_clkc_clear)
     );
 
     // MEMORY ACCESS CONTROLL
@@ -260,6 +268,19 @@ module top_module
         .b_col_in (sa_b_col_in),
         .c_out    (sa_c_out),
         .exit_flag(sa_exit_flag)
+    );
+
+    // CLK COUNTER USED FOR BENCHMARKS
+    warp_counter #(
+        .NUM_CNT_BITS(16) // 2 bytes for UART
+    ) clk_cycle_counter (
+        .clk          (CLK),
+        .n_rst        (nRST),
+        .clear        (fsm_clkc_clear),
+        .count_enable (fsm_clkc_enable),
+        .rollover_val (clkc_count + 2), // shouldn't roll over
+        .count_out    (clkc_count),
+        .rollover_flag(clkc_rollover_flag)
     );
 
 endmodule

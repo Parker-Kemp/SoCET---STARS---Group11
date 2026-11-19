@@ -8,7 +8,7 @@ module top_module_fsm
     output mem_owner_t mem_owner,
     output logic start_compute,
     output logic start_uart_load, start_uart_readback,
-    output logic done
+    output logic done, clkc_enable, clkc_clear
 );
 
     // controller code
@@ -48,6 +48,8 @@ module top_module_fsm
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 1;
                 done = 0;
             end
             LOAD: begin
@@ -55,6 +57,8 @@ module top_module_fsm
                 start_uart_load = 1;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 0;
             end
             COMPUTE: begin
@@ -62,6 +66,8 @@ module top_module_fsm
                 start_uart_load = 0;
                 start_compute = 1;
                 start_uart_readback = 0;
+                clkc_enable = 1;
+                clkc_clear = 0;
                 done = 0;
             end
             READBACK: begin
@@ -69,6 +75,8 @@ module top_module_fsm
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 1;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 0;
             end
             DONE: begin
@@ -76,9 +84,19 @@ module top_module_fsm
                 start_uart_load = 0;
                 start_compute = 0;
                 start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 0;
                 done = 1;
             end
-            default: begin end
+            default: begin 
+                mem_owner = MEM_NONE;
+                start_uart_load = 0;
+                start_compute = 0;
+                start_uart_readback = 0;
+                clkc_enable = 0;
+                clkc_clear = 1;
+                done = 0;
+            end
         endcase
     end
         
